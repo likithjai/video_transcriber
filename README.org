@@ -1,0 +1,66 @@
+#+title: subtitles made easy
+#+author: likith
+
+* motivation
+I wanted to automate the generation and burning in subtitles for video files, using free and open-source tooling, in a way that is repeatable, and easily scalable or deployable to batches of files. Yes, there are other apps that are able to do this, like adobe, and even kdenlive does have the functionality to do this. But with kdenlive, I always found its handling of executables to be a bit unreliable, especially with NixOS.
+
+* usage
+simply make the ~run.sh~ file executable by running
+
+#+begin_src shell
+  sudo chmod +x run.sh
+#+end_src
+
+create the nix shell if needed by running
+
+#+begin_src shell
+  nix-shell
+#+end_src
+
+or provide the requirements using an alternative package manager like ~pacman~ or ~pip~ 
+
+and run the file once the requirements are available in ~$PATH~ or ~$PYTHONPATH~ as applicable
+
+#+begin_src shell
+  bash run.sh
+#+end_src
+
+* the process
+** ~shell.nix~
+first, the ~shell.nix~ file helps create a nix shell with the required dependencies. Simply run
+
+#+begin_src shell
+  nix-shell
+#+end_src
+
+in the project directory to create a nix shell with the required python dependencies.
+
+** ~transcribe.py~
++ this file expects a video file named ~kden_out.mp4~ in the project directory. Feel free to modify the ~input_video~ variable as needed
++ it also expects a ~subtitles.ass~ file to be present in the project directory. From here, it just takes header information to be able to generate the final subtitles file(s).
++ once this runs successfully, a ~subtitles_final_phrase.ass~ file is generated containing the subtitles in the ~.ass~ format.
++ if uniform subtitles are what you need, i.e., all the generated subtitles follow the same style, then, you can just burn the subtitles in ~subtitles_final_phrase.ass~ onto the video file using:
+
+  #+begin_src shell
+    ffmpeg -hide_banner -y -i kden_out.mp4 -vf "subtitles=subtitles_final_phrase.ass" -c:a copy -preset veryslow reel.mp4
+  #+end_src
+or a modified version with certain style elements changed using
+
+#+begin_src shell
+  ffmpeg -hide_banner -y -i kden_out.mp4 -vf "subtitles=subtitles_final_phrase.ass:force_style='Fontname=Roboto,PrimaryColor=white,Fontsize=100,MarginV=200,BorderStyle=3'" -c:a copy -preset veryslow reel.mp4
+#+end_src
+
+** ~new_subtitler.py~
+this file generates subtitles, 3 lines at a time, with different styles, to make the final video more visually engaging. Simply run
+
+#+begin_src shell
+  python new_subtitler.py
+#+end_src
+to generate ~new_subtitles.ass~
+
+** final ffmpeg command
+finally, to burn in the generated subtitles, run
+
+#+begin_src shell
+  ffmpeg -hide_banner -y -i kden_out.mp4 -vf "subtitles=new_subtitles.ass" -c:a copy -preset veryslow reel.mp4
+#+end_src
